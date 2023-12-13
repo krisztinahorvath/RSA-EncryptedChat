@@ -15,7 +15,7 @@ def is_prime(num):
 
 def generate_large_prime():
     while True:
-        num = random.randint(2 ** 10, 2 ** 16) | 1  # Ensure that the number is odd
+        num = random.randint(2 ** 10, 2 ** 16) | 1
         if is_prime(num):
             return num
 
@@ -27,41 +27,45 @@ def choose_random_public_exponent_e(phi):
     return e
 
 def generate_key_pair():
-    # Generate random large prime numbers p and q
+    # generate random large prime numbers p and q
     p = generate_large_prime()
     q = generate_large_prime()
 
-    # Calculate n and φ(n)
+    # calculate n and φ(n)
     n = p * q
     phi = (p - 1) * (q - 1)
 
-    # Choose a random public exponent e
+    # choose a random public exponent e
     e = choose_random_public_exponent_e(phi)
 
-    # Calculate private exponent d
+    # calculate private exponent d
     d = pow(e, -1,  phi)
 
     return (e, n), (d, n)
 
 def encrypt_message(message, public_key):
     e, n = public_key
+
+    # c = m^e % n
     encrypted_message = [pow(ord(char), e, n) for char in message]
     return encrypted_message
 
 def decrypt_message(encrypted_message, private_key):
     d, n = private_key
+
+    # m = c^d % n
     decrypted_message = [chr(pow(char, d, n) % n) for char in encrypted_message]
     return ''.join(decrypted_message)
 
 def handle_client_messages(client_socket, server_private_key):
     try:
         while True:
-            # Receive encoded encrypted message from the client
+            # receive encoded encrypted message from the client
             encoded_message_str = client_socket.recv(1024).decode('utf-8')
             encoded_message = base64.b64decode(encoded_message_str)
             encrypted_message = pickle.loads(encoded_message)
 
-            # Decrypt the message
+            # decrypt the message
             decrypted_message = decrypt_message(encrypted_message, server_private_key)
             print(f"\nEncrypted client encoded in base 64: {encoded_message_str}")
             print(f"Decrypted client: {decrypted_message}")
@@ -76,7 +80,7 @@ def handle_client_messages(client_socket, server_private_key):
 def handle_server_messages(server_socket, client_public_key):
     try:
         while True:
-            # Send an encrypted reply to the client
+            # send an encrypted reply to the client
             message_to_send = input("\nEnter a message to send to the client: ")
             encrypted_reply = encrypt_message(message_to_send, client_public_key)
             encoded_reply = base64.b64encode(pickle.dumps(encrypted_reply)).decode('utf-8')
@@ -88,30 +92,30 @@ def handle_server_messages(server_socket, client_public_key):
     finally:
         server_socket.close()
 
-# Server setup
+# server setup
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind(("0.0.0.0", 7777))
 server_socket.listen(1)
 
 print("Server is listening for connections...")
 
-# Accept connection from client
+# accept connection from client
 client_socket, addr = server_socket.accept()
 print(f"Connection from {addr}")
 
-# Generate RSA key pair for the server
+# generate RSA key pair for the server
 server_public_key, server_private_key = generate_key_pair()
 
-# Send the server's public key to the client (encoded in base64)
+# send the server's public key to the client (encoded in base64)
 encoded_server_public_key = base64.b64encode(pickle.dumps(server_public_key)).decode('utf-8')
 client_socket.send(encoded_server_public_key.encode('utf-8'))
 
-# Receive the client's public key
+# receive the client's public key
 encoded_client_public_key_str = client_socket.recv(1024).decode('utf-8')
 encoded_client_public_key = base64.b64decode(encoded_client_public_key_str)
 client_public_key = pickle.loads(encoded_client_public_key)
 
-# Start threads for handling messages
+# start threads for handling messages
 client_thread = threading.Thread(target=handle_client_messages, args=(client_socket, server_private_key))
 server_thread = threading.Thread(target=handle_server_messages, args=(client_socket, client_public_key))
 

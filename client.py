@@ -15,7 +15,7 @@ def is_prime(num):
 
 def generate_large_prime():
     while True:
-        num = random.randint(2 ** 10, 2 ** 16) | 1  # Ensure that the number is odd
+        num = random.randint(2 ** 10, 2 ** 16) | 1
         if is_prime(num):
             return num
 
@@ -27,18 +27,18 @@ def choose_random_public_exponent_e(phi):
     return e
 
 def generate_key_pair():
-    # Generate random large prime numbers p and q
+    # generate random large prime numbers p and q
     p = generate_large_prime()
     q = generate_large_prime()
 
-    # Calculate n and φ(n)
+    # calculate n and φ(n)
     n = p * q
     phi = (p - 1) * (q - 1)
 
-    # Choose a random public exponent e
+    # choose a random public exponent e
     e = choose_random_public_exponent_e(phi)
 
-    # Calculate private exponent d
+    # calculate private exponent d
     d = pow(e, -1, phi)
 
     return (e, n), (d, n)
@@ -56,14 +56,14 @@ def decrypt_message(encrypted_message, private_key):
 def receive_messages(client_socket, private_key):
     try:
         while True:
-            # Receive the encrypted reply from the server
+            # receive the encrypted reply from the server
             encoded_reply_str = client_socket.recv(1024).decode('utf-8')
             if not encoded_reply_str:
                 break
             print(f"\nEncrypted server encoded in base 64: {encoded_reply_str} ")
             encoded_reply = pickle.loads(base64.b64decode(encoded_reply_str))
 
-            # Convert each element of the list
+            # convert each element of the list
             encrypted_reply = [int(char) for char in encoded_reply]
             decrypted_reply = decrypt_message(encrypted_reply, private_key)
 
@@ -77,29 +77,29 @@ def receive_messages(client_socket, private_key):
 
 
 def start_client():
-    # Client setup
+    # client setup
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect(("192.168.213.1", 7777))
 
-    # Generate RSA key pair for the client
+    # generate RSA key pair for the client
     client_public_key, client_private_key = generate_key_pair()
 
-    # Receive the server's public key
+    # receive the server's public key
     encoded_server_public_key_str = client_socket.recv(1024).decode('utf-8')
     encoded_server_public_key = base64.b64decode(encoded_server_public_key_str)
     server_public_key = pickle.loads(encoded_server_public_key)
 
-    # Send the client's public key to the server (encoded in base64)
+    # send the client's public key to the server (encoded in base64)
     encoded_client_public_key = base64.b64encode(pickle.dumps(client_public_key)).decode('utf-8')
     client_socket.send(encoded_client_public_key.encode('utf-8'))
 
-    # Start a thread to receive messages from the server
+    # start a thread to receive messages from the server
     receive_thread = threading.Thread(target=receive_messages, args=(client_socket, client_private_key))
     receive_thread.start()
 
     try:
         while True:
-            # Send an encrypted message to the server
+            # send an encrypted message to the server
             message_to_send = input("\nEnter a message to send to the server: ")
             encrypted_message = encrypt_message(message_to_send, server_public_key)
             encoded_message = base64.b64encode(pickle.dumps(encrypted_message)).decode('utf-8')
@@ -109,9 +109,9 @@ def start_client():
         print("Client shutting down...")
 
     finally:
-        # Close the connection
+        # close the connection
         client_socket.close()
 
 
-# Start the client
+# start the client
 start_client()
