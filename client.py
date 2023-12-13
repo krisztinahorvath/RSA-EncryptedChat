@@ -45,11 +45,15 @@ def generate_key_pair():
 
 def encrypt_message(message, public_key):
     e, n = public_key
+
+    # c = m^e % n
     encrypted_message = [pow(ord(char), e, n) for char in message]
     return encrypted_message
 
 def decrypt_message(encrypted_message, private_key):
     d, n = private_key
+
+    # m = c^d % n
     decrypted_message = [chr(pow(char, d, n) % n) for char in encrypted_message]
     return ''.join(decrypted_message)
 
